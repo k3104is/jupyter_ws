@@ -1,0 +1,14 @@
+version: '3'
+services:
+  notebook:
+    image: jupyter/scipy-notebook
+    user: root
+    ports:
+      - '8890:8888'
+    environment:
+      - GRANT_SUDO=yes
+      - TZ=Asia/Tokyo
+    volumes:
+      - ../workdir:/home/jovyan/work
+    command: start-notebook.sh --NotebookApp.token='test'
+#    command: start-notebook.sh --NotebookApp.password='sha1:YOUR_PASSWORD_HASH_VALUE'
