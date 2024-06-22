@@ -1,0 +1,23 @@
+version: '3'
+services:
+  hailo_tensorflow:
+    build: .
+    image: i_hailo_scipy_gstreamer
+    container_name: c_hailo_scipy_gstreamer
+    user: root
+    ports:
+      - '8892:8888'
+    environment:
+      - GRANT_SUDO=yes
+      - TZ=Asia/Tokyo
+    volumes:
+      - ../workdir:/home/jovyan/work
+      # - /dev/hailo0:/dev/hailo0
+    command: start-notebook.sh --NotebookApp.token='test'
+#    command: start-notebook.sh --NotebookApp.password='sha1:YOUR_PASSWORD_HASH_VALUE'
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    privileged: true
+    pid: "host"
