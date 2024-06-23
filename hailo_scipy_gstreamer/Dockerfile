@@ -1,14 +1,9 @@
 # --- builder ---
 FROM ubuntu:22.04 as builder
-
-# --- stage ---
-FROM jupyter/scipy-notebook:python-3.10
-
-USER root
 # HailoRT control software (GitHub)
 RUN --mount=type=cache,target=/var/cache/apt/ \
   apt update && \
-  apt install -y git curl wget vim
+  apt install -y git curl wget vim unzip
 RUN --mount=type=cache,target=/var/cache/apt/ \
   apt install -y make gcc libelf-dev git cmake build-essential
 RUN --mount=type=cache,target=/var/cache/build/ \
@@ -16,6 +11,63 @@ RUN --mount=type=cache,target=/var/cache/build/ \
   cd hailort && \
   cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Release && \
   cmake --build build --config release --target install
+
+
+RUN --mount=type=cache,target=/var/cache/build/ \
+  apt install -y \
+  # OpenCV: Required build dependencies
+  cmake \
+  python3-dev \
+  python3-numpy \
+  libavcodec-dev \
+  libavformat-dev \
+  libswscale-dev \
+  libgtk2.0-dev \
+  libgtk-3-dev \
+  # OpenCV: Optional Dependencies
+  libpng-dev \
+  libjpeg-dev \
+  libopenexr-dev \
+  libtiff-dev \
+  libwebp-dev \
+  # OpenCV のビルド時に -D WITH_QT=ON を設定するために以下が必要だった
+  qtbase5-dev \
+  qtdeclarative5-dev
+  
+  # OpenCV のビルドとインストール
+# https://docs.opencv.org/master/d2/de6/tutorial_py_setup_in_ubuntu.html
+# https://toriten1024.hatenablog.com/entry/2018/09/29/012205
+# https://dlrecord.hatenablog.com/entry/2017/12/15/145356
+# https://atmarkit.itmedia.co.jp/ait/articles/1704/10/news134.html
+RUN mkdir /opencv && \
+cd /opencv && \
+# OpenCV のダウンロード
+wget https://github.com/opencv/opencv/archive/4.5.3.zip && \
+unzip 4.5.3.zip && \
+# OpenCV の cmake
+cd /opencv/opencv-4.5.3 && \
+mkdir build && \
+cd /opencv/opencv-4.5.3/build && \
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+-D BUILD_DOCS=OFF \
+-D BUILD_EXAMPLES=OFF \
+-D BUILD_TESTS=OFF \
+-D WITH_1394=OFF \
+-D WITH_GSTREAMER=ON \
+-D WITH_FFMPEG=OFF \
+# cv2.waitKey() を使うためには WITH_QT=ON にする必要があった
+-D WITH_QT=ON \
+.. && \
+# OpenCV のビルド ※ $(nproc) はコア数を返す、make を並列処理させて高速化したい場合は指定する
+make -j$(nproc) && \
+#make -j3 && \
+# make && \
+make install
+
+# --- stage ---
+FROM jupyter/scipy-notebook:python-3.10
+
+USER root
 COPY ./bin/hailort-4.17.0-cp310-cp310-linux_aarch64.whl /
 RUN pip install /hailort-4.17.0-cp310-cp310-linux_aarch64.whl
 
@@ -35,24 +87,6 @@ RUN apt update && \
     git \
     wget \
     unzip \
-    # OpenCV: Required build dependencies
-    cmake \
-    python3-dev \
-    python3-numpy \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev \
-    libgtk2.0-dev \
-    libgtk-3-dev \
-    # OpenCV: Optional Dependencies
-    libpng-dev \
-    libjpeg-dev \
-    libopenexr-dev \
-    libtiff-dev \
-    libwebp-dev \
-    # OpenCV のビルド時に -D WITH_QT=ON を設定するために以下が必要だった
-    qtbase5-dev \
-    qtdeclarative5-dev \
     # gstreamer のインストール
     # https://gstreamer.freedesktop.org/documentation/installing/on-linux.html
     libgstreamer1.0-dev \
@@ -74,37 +108,6 @@ RUN apt update && \
     # aptのクリア
     apt clean && rm -rf /var/lib/apt/lists/*
 
-# OpenCV のビルドとインストール
-# https://docs.opencv.org/master/d2/de6/tutorial_py_setup_in_ubuntu.html
-# https://toriten1024.hatenablog.com/entry/2018/09/29/012205
-# https://dlrecord.hatenablog.com/entry/2017/12/15/145356
-# https://atmarkit.itmedia.co.jp/ait/articles/1704/10/news134.html
-RUN mkdir /opencv && \
-    cd /opencv && \
-    # OpenCV のダウンロード
-    wget https://github.com/opencv/opencv/archive/4.5.3.zip && \
-    unzip 4.5.3.zip && \
-    # OpenCV の cmake
-    cd /opencv/opencv-4.5.3 && \
-    mkdir build && \
-    cd /opencv/opencv-4.5.3/build && \
-    cmake -D CMAKE_BUILD_TYPE=RELEASE \
-    -D BUILD_DOCS=OFF \
-    -D BUILD_EXAMPLES=OFF \
-    -D BUILD_TESTS=OFF \
-    -D WITH_1394=OFF \
-    -D WITH_GSTREAMER=ON \
-    -D WITH_FFMPEG=OFF \
-    # cv2.waitKey() を使うためには WITH_QT=ON にする必要があった
-    -D WITH_QT=ON \
-    .. && \
-    # OpenCV のビルド ※ $(nproc) はコア数を返す、make を並列処理させて高速化したい場合は指定する
-    #make -j${nproc} && \
-    #make -j3 && \
-    make && \
-    make install && \
-    # 後始末
-    rm -rf /opencv
 
 # 必要なプラグインをインストール（必要に応じて取捨選択）
 RUN pip3 install \
@@ -113,5 +116,17 @@ RUN pip3 install \
     flask \
     pytest \
     mongomock
+
+COPY --from=builder /usr/local/bin/ /usr/local/builder/bin/
+COPY --from=builder /usr/local/include/ /usr/local/builder/include/
+COPY --from=builder /usr/local/lib/ /usr/local/builder/lib/
+COPY --from=builder /usr/local/share/ /usr/local/builder/share/
+RUN cp -r /usr/local/builder/bin/* /usr/local/bin/
+RUN cp -r /usr/local/builder/include/* /usr/local/include/
+RUN cp -r /usr/local/builder/lib/* /usr/local/lib/
+RUN cp -r /usr/local/builder/share/* /usr/local/share/
+RUN ln -s $(find  /usr/local/builder/ -type f | grep cpython) /opt/conda/lib/python3.10/site-packages/cv2.so
+
+# COPY --from=builder /usr/local/Cellar/ /usr/local/Cellar/
 
 USER jovyan

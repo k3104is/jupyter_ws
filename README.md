@@ -8,3 +8,5 @@
 OpenCVではじめよう ディープラーニングによる画像認識 サンプルコード
 [opencv_dl_book](https://github.com/ghmagazine/opencv_dl_book)
 [学習済みモデルのダウンロード](https://gihyo.jp/book/2022/978-4-297-12775-6/support)
+
+[今更ながらPythonでOpenCVを使うための覚書](https://qiita.com/jeankenshow/items/01948b2103dff3fc9e5f)
