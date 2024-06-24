@@ -87,6 +87,8 @@ RUN apt update && \
     git \
     wget \
     unzip \
+    # 追加
+    libqt5test5 \
     # gstreamer のインストール
     # https://gstreamer.freedesktop.org/documentation/installing/on-linux.html
     libgstreamer1.0-dev \
