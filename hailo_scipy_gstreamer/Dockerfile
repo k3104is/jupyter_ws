@@ -119,16 +119,21 @@ RUN pip3 install \
     pytest \
     mongomock
 
-COPY --from=builder /usr/local/bin/ /usr/local/builder/bin/
-COPY --from=builder /usr/local/include/ /usr/local/builder/include/
-COPY --from=builder /usr/local/lib/ /usr/local/builder/lib/
-COPY --from=builder /usr/local/share/ /usr/local/builder/share/
-RUN cp -r /usr/local/builder/bin/* /usr/local/bin/
-RUN cp -r /usr/local/builder/include/* /usr/local/include/
-RUN cp -r /usr/local/builder/lib/* /usr/local/lib/
-RUN cp -r /usr/local/builder/share/* /usr/local/share/
-RUN ln -s $(find  /usr/local/builder/ -type f | grep cpython) /opt/conda/lib/python3.10/site-packages/cv2.so
+COPY --from=builder /usr/local/bin/* /usr/local/builder/bin/
+COPY --from=builder /usr/local/include/* /usr/local/builder/include/
+COPY --from=builder /usr/local/lib/* /usr/local/builder/lib
+COPY --from=builder /usr/local/share/* /usr/local/buildershare/
+RUN ln -sf /usr/local/builder/bin/* /usr/local/bin/
+RUN ln -sf /usr/local/builder/include/* /usr/local/include/
+RUN ln -sf /usr/local/builder/lib/* /usr/lib/
+RUN ln -sf /usr/local/builder/share/* /usr/local/share/
+RUN ln -sf $(find  /usr/local/builder/ -type f | grep cpython) /opt/conda/lib/python3.10/site-packages/cv2.so
 
 # COPY --from=builder /usr/local/Cellar/ /usr/local/Cellar/
+
+
+COPY ./cfg/export.sh /
+RUN echo "source /export.sh" >> /home/jovyan/.bashrc
+# RUN echo "source /export.sh" >> /root/.bashrc
 
 USER jovyan

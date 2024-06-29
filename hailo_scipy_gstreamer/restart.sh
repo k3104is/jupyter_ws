@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 NAME='hailo_scipy_gstreamer'
 
