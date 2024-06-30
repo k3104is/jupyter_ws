@@ -10,3 +10,5 @@ OpenCVではじめよう ディープラーニングによる画像認識 サン
 [学習済みモデルのダウンロード](https://gihyo.jp/book/2022/978-4-297-12775-6/support)
 
 [今更ながらPythonでOpenCVを使うための覚書](https://qiita.com/jeankenshow/items/01948b2103dff3fc9e5f)
+
+[ラズパイでwebカメラ画像撮影 fswebcam](https://qiita.com/Bashi50/items/e408909225b283a2c8f7)

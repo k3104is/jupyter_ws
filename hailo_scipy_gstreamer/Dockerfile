@@ -141,4 +141,7 @@ COPY ./cfg/export.sh /
 RUN echo "source /export.sh" >> /home/jovyan/.bashrc
 # RUN echo "source /export.sh" >> /root/.bashrc
 
+# video permission
+RUN usermod -aG video jovyan
+
 USER jovyan
