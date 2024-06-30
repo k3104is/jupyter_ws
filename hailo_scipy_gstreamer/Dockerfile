@@ -77,7 +77,8 @@ RUN pip install /hailort-4.17.0-cp310-cp310-linux_aarch64.whl
 ENV TZ=Asia/Tokyo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt update && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt update && \
     apt -y install \
     software-properties-common \
     # 必要なパッケージをインストール（必要に応じて取捨選択）
@@ -106,9 +107,13 @@ RUN apt update && \
     gstreamer1.0-gl \
     gstreamer1.0-gtk3 \
     gstreamer1.0-qt5 \
-    gstreamer1.0-pulseaudio && \
+    gstreamer1.0-pulseaudio \
+    # video
+    v4l-utils \
+    # picture
+    fswebcam
     # aptのクリア
-    apt clean && rm -rf /var/lib/apt/lists/*
+    # apt clean && rm -rf /var/lib/apt/lists/*
 
 
 # 必要なプラグインをインストール（必要に応じて取捨選択）

@@ -12,6 +12,8 @@ services:
       - TZ=Asia/Tokyo
     volumes:
       - ../workdir:/home/jovyan/work
+    devices:
+      - /dev/video0:/dev/video0
       # - /dev/hailo0:/dev/hailo0
     command: start-notebook.sh --NotebookApp.token='test'
 #    command: start-notebook.sh --NotebookApp.password='sha1:YOUR_PASSWORD_HASH_VALUE'
